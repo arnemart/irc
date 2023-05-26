@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>irc</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background: black;
+        color: #a0df00;
+        font-family: monospace;
+        font-size: 16px;
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-top: 1rem solid blue;
+      }
+      .irc {
+        overflow-y: scroll;
+        flex: 0 1 auto;
+        padding: 1rem 1rem 0 1rem;
+      }
+      p {
+        display: flex;
+        gap: 2rem;
+      }
+      form {
+        padding: 1rem;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: baseline;
+        border-top: 1rem solid blue;
+      }
+      input {
+        flex: 1 1 auto;
+        border: none;
+        outline: none;
+        appearance: none;
+        margin: 0;
+        padding: 0 1rem;
+        background-color: inherit;
+        color: inherit;
+        font-size: inherit;
+        font-family: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="irc"></div>
+    <form>
+      <span class="prompt">nick:</span> <input type="text" autofocus />
+    </form>
+    <script>
+      const socket = new WebSocket(`wss://${window.location.host}`)
+      const irc = document.querySelector(".irc")
+      const form = document.querySelector("form")
+      const input = document.querySelector("input")
+      let nick = ""
+      socket.addEventListener("open", () => {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault()
+          const v = input.value
+          const now = new Date()
+          const time = `<span>${
+            now.getHours() < 10 ? "0" : ""
+          }${now.getHours()}:${
+            now.getMinutes() < 10 ? "0" : ""
+          }${now.getMinutes()}</span>`
+          if (nick == "") {
+            nick = v
+            socket.send(
+              `${time}<span><em>${nick} has joined the chat</em></span>`
+            )
+            document.querySelector(".prompt").innerText = "[#fjas]"
+          } else if (/^\/nick/.test(v)) {
+            const oldnick = nick
+            nick = v.replace(/^\/nick\s+/, "")
+            socket.send(
+              `${time}<span><em>${oldnick} is now known as ${nick}</em></span>`
+            )
+          } else if (/^\/me/.test(v)) {
+            socket.send(
+              `${time}<span><em>${nick} ${v.replace(
+                /^\/me\s+/,
+                ""
+              )}</em></span>`
+            )
+          } else {
+            socket.send(`${time}<span>${nick}</span><span>${v}</span>`)
+          }
+          input.value = ""
+        })
+      })
+      socket.addEventListener("message", (event) => {
+        const p = document.createElement("p")
+        p.innerHTML = event.data
+        irc.appendChild(p)
+        p.scrollIntoView()
+      })
+    </script>
+  </body>
+</html>

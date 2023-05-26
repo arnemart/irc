@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "ws": "^8.13.0"
+  },
+  "prettier": {
+    "semi": false,
+    "trailingComma": "none"
+  }
+}
