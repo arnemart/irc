@@ -77,6 +77,16 @@
         })
       })
 
+      const lostConnection = () => {
+        const p = document.createElement("p")
+        p.innerHTML = "<span>Lost connection! Refresh please</span>"
+        irc.appendChild(p)
+        p.scrollIntoView()
+      }
+
+      socket.addEventListener("close", lostConnection)
+      socket.addEventListener("error", lostConnection)
+
       socket.addEventListener("message", (event) => {
         const p = document.createElement("p")
         const data = JSON.parse(event.data)

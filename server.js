@@ -77,6 +77,8 @@ wss.on("connection", (ws) => {
       if (msg != "") {
         broadcast({ type: "me", nick, msg })
       }
+    } else if (/^\/help/.test(data)) {
+      ws.send(encodeMsg({ type: "error", msg: "lol" }))
     } else if (data != "") {
       broadcast({ type: "msg", nick, msg: data })
     }
