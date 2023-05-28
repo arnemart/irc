@@ -77,9 +77,20 @@
         })
       })
 
+      const el = (type, ...children) => {
+        const e = document.createElement(type)
+        for (child of children) {
+          e.appendChild(
+            typeof child == "string"
+              ? document.createTextNode(child)
+              : el(...child)
+          )
+        }
+        return e
+      }
+
       const lostConnection = () => {
-        const p = document.createElement("p")
-        p.innerHTML = "<span>Lost connection! Refresh please</span>"
+        const p = el("p", ["span", "Lost connection! Refresh please"])
         irc.appendChild(p)
         p.scrollIntoView()
       }
@@ -88,35 +99,39 @@
       socket.addEventListener("error", lostConnection)
 
       socket.addEventListener("message", (event) => {
-        const p = document.createElement("p")
+        const p = el("p")
         const data = JSON.parse(event.data)
-        let msg = `<span>${data.time}</span>`
+        p.appendChild(el("span", data.time))
         switch (data.type) {
           case "welcome":
-            msg += "<span><em>welcome to irc.aurlien.net</em></span>"
+            p.appendChild(el("span", ["em", "welcome to irc.aurlien.net"]))
             joined = true
             document.querySelector(".prompt").innerText = "[#fjas]"
             break
           case "error":
-            msg += `<span><strong>ERROR:</strong> ${data.msg}</span>`
+            p.appendChild(el("span", ["strong", "ERROR: "], data.msg))
             break
           case "join":
-            msg += `<span><em>${data.nick} has entered the chat</em></span>`
+            p.appendChild(
+              el("span", ["em", `${data.nick} has entered the chat`])
+            )
             break
           case "leave":
-            msg += `<span><em>${data.nick} has left the chat</em></span>`
+            p.appendChild(el("span", ["em", `${data.nick} has left the chat`]))
             break
           case "nick":
-            msg += `<span><em>${data.oldnick} is now known as ${data.nick}</em></span>`
+            p.appendChild(
+              el("span", ["em", `${data.oldnick} is now known as ${data.nick}`])
+            )
             break
           case "me":
-            msg += `<span><em>${data.nick} ${data.msg}</em></span>`
+            p.appendChild(el("span", ["em", `${data.nick} ${data.msg}`]))
             break
           case "msg":
-            msg += `<span>${data.nick}</span><span>${data.msg}</span>`
+            p.appendChild(el("span", data.nick))
+            p.appendChild(el("span", data.msg))
             break
         }
-        p.innerHTML = msg
         irc.appendChild(p)
         p.scrollIntoView()
       })
