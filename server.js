@@ -39,7 +39,7 @@ const broadcast = (msg) => {
     }
   }
 }
-wss.close
+
 wss.on("connection", (ws) => {
   users.set(ws, null)
 
