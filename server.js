@@ -39,7 +39,7 @@ const broadcast = (msg) => {
     }
   }
 }
-
+wss.close
 wss.on("connection", (ws) => {
   users.set(ws, null)
 
@@ -55,6 +55,9 @@ wss.on("connection", (ws) => {
   ws.on("close", leave)
 
   ws.on("message", (data) => {
+    if (!users.has(ws)) {
+      return
+    }
     data = data.toString()
     const nick = users.get(ws)
     if (/^\/nick/.test(data)) {
@@ -77,7 +80,7 @@ wss.on("connection", (ws) => {
       if (msg != "") {
         broadcast({ type: "me", nick, msg })
       }
-    } else if (/^\/(help|op|join)/.test(data)) {
+    } else if (/^\/(help|join)/.test(data)) {
       ws.send(encodeMsg({ type: "error", msg: "lol" }))
     } else if (/^\/shrug/.test(data)) {
       const msg = data.replace(/^\/shrug\s*/, "")
@@ -89,14 +92,57 @@ wss.on("connection", (ws) => {
         nick: "giphy",
         msg: `[se for deg en gif av «${msg}» her]`
       })
+    } else if (/^\/leave/.test(data)) {
+      const msg = data.replace(/^\/leave\s*/, "")
+      broadcast({ type: "msg", nick, msg: `🍃 ${msg}` })
+    } else if (/^\/op/.test(data)) {
+      const opee = data.replace(/^\/op\s*/, "")
+      const nopee = `@${opee}`
+      if (opee.length <= 19 && new Set(users.values()).has(opee)) {
+        broadcast({ type: "nick", nick: nopee, oldnick: opee })
+        for (const [ws, n] of users) {
+          if (n == opee) {
+            users.set(ws, nopee)
+            break
+          }
+        }
+      }
+    } else if (/^\/deop/.test(data)) {
+      const opee = data.replace(/^\/deop\s*/, "")
+      const nopee = opee.replace(/^@/, "")
+      if (opee != nopee && new Set(users.values()).has(opee)) {
+        broadcast({ type: "nick", nick: nopee, oldnick: opee })
+        for (const [ws, n] of users) {
+          if (n == opee) {
+            users.set(ws, nopee)
+            break
+          }
+        }
+      }
     } else if (/^\/kick/.test(data)) {
       const kickee = data.replace(/^\/kick\s*/, "")
       if (new Set(users.values()).has(kickee)) {
-        broadcast({
-          type: "me",
-          nick,
-          msg: `sparker ${kickee} med en gammel beksømstøvel`
-        })
+        if (
+          nick.replace(/[^@].*$/, "").length >
+          kickee.replace(/[^@].*$/, "").length
+        ) {
+          broadcast({
+            type: "me",
+            nick: kickee,
+            msg: `was kicked by ${nick}`
+          })
+          for (const [ws, n] of users) {
+            if (n == kickee) {
+              ws.send(
+                encodeMsg({ type: "msg", nick: "SERVER", msg: "Goodbye" })
+              )
+              users.delete(ws)
+              break
+            }
+          }
+        } else {
+          ws.send(encodeMsg({ type: "error", msg: "You need more op" }))
+        }
       }
     } else if (/^\/slap/.test(data)) {
       const slapee = data.replace(/^\/slap\s*/, "")
