@@ -77,8 +77,42 @@ wss.on("connection", (ws) => {
       if (msg != "") {
         broadcast({ type: "me", nick, msg })
       }
-    } else if (/^\/help/.test(data)) {
+    } else if (/^\/(help|op|join)/.test(data)) {
       ws.send(encodeMsg({ type: "error", msg: "lol" }))
+    } else if (/^\/shrug/.test(data)) {
+      const msg = data.replace(/^\/shrug\s*/, "")
+      broadcast({ type: "msg", nick, msg: `${msg} ¯\\_(ツ)_/¯` })
+    } else if (/^\/giphy/.test(data)) {
+      const msg = data.replace(/^\/giphy\s*/, "")
+      broadcast({
+        type: "msg",
+        nick: "giphy",
+        msg: `[se for deg en gif av «${msg}» her]`
+      })
+    } else if (/^\/kick/.test(data)) {
+      const kickee = data.replace(/^\/kick\s*/, "")
+      if (new Set(users.values()).has(kickee)) {
+        broadcast({
+          type: "me",
+          nick,
+          msg: `sparker ${kickee} med en gammel beksømstøvel`
+        })
+      }
+    } else if (/^\/slap/.test(data)) {
+      const slapee = data.replace(/^\/slap\s*/, "")
+      if (new Set(users.values()).has(slapee)) {
+        broadcast({
+          type: "me",
+          nick,
+          msg: `kliner til ${slapee} med en svær laks`
+        })
+      }
+    } else if (/^\/list/.test(data)) {
+      const ulist = [...users.keys()]
+        .filter((ws) => ws.readyState == OPEN)
+        .map((ws) => users.get(ws))
+        .join(", ")
+      ws.send(encodeMsg({ type: "msg", nick: "SERVER", msg: ulist }))
     } else if (data != "") {
       broadcast({ type: "msg", nick, msg: data })
     }
